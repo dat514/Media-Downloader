@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Media Downloader</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    :root { --primary:#ff0055; --bg:#0a0e17; --card:#151b2e; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:linear-gradient(135deg,#0a0e17,#1a0033); color:#fff; font-family:'Segoe UI',sans-serif; min-height:100vh; padding:20px; }
+    .container { max-width:960px; margin:0 auto; }
+    .header { text-align:center; margin-bottom:40px; }
+    .logo-big { width:100px; filter:drop-shadow(0 0 20px var(--primary)); }
+    h1 { margin:12px 0; font-size:2.7em; background:linear-gradient(90deg,#ff0055,#ffaa00); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .support { color:#999; font-size:0.92em; letter-spacing:1px; }
+    .input-box { width:100%; padding:18px; border-radius:14px; border:none; background:var(--card); color:#fff; font-size:1.1em; box-shadow:0 6px 20px rgba(0,0,0,0.5); }
+    .btn { background:var(--primary); padding:15px 32px; border:none; border-radius:12px; color:#fff; font-weight:bold; cursor:pointer; margin:12px 6px 0 0; transition:all .3s; font-size:1.05em; }
+    .btn:hover { background:#cc0044; transform:translateY(-4px); box-shadow:0 10px 25px rgba(255,0,85,.6); }
+    .btn-success { background:#00c853; padding:12px 24px; font-size:0.95em; }
+    .card { background:var(--card); padding:30px; border-radius:18px; margin:25px 0; box-shadow:0 12px 40px rgba(0,0,0,0.7); display:none; }
+    .card.show { display:block; }
+    .info { display:grid; grid-template-columns:260px 1fr; gap:30px; align-items:start; }
+    .thumb { width:100%; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.8); }
+    .slider { -webkit-appearance:none; width:100%; height:16px; border-radius:10px; background:#333; outline:none; margin:20px 0; box-shadow:inset 0 3px 10px rgba(0,0,0,0.6); }
+    .slider::-webkit-slider-thumb { -webkit-appearance:none; width:36px; height:36px; border-radius:50%; background:var(--primary); cursor:pointer; box-shadow:0 0 25px rgba(255,0,85,0.9); }
+    .select-wrapper { position:relative; margin:18px 0; }
+    .select-wrapper select { width:100%; padding:16px 45px 16px 18px; border-radius:14px; border:none; background:#222; color:#fff; font-size:1em; cursor:pointer; appearance:none; box-shadow:0 4px 15px rgba(0,0,0,0.4); }
+    .select-wrapper::after { content:'Down Arrow'; position:absolute; right:18px; top:50%; transform:translateY(-50%); color:#aaa; font-size:1.1em; pointer-events:none; }
+    .total { font-size:1.7em; font-weight:bold; color:var(--primary); margin:15px 0; }
+    .status { text-align:center; font-size:1.4em; margin:30px 0; color:var(--primary); min-height:40px; }
+    .my-logo { position:fixed; bottom:10px; right:10px; width:40px; opacity:0.6; cursor:pointer; transition:all .3s; border-radius:10px; box-shadow:0 4px 15px rgba(0,0,0,0.8); }
+    .my-logo:hover { opacity:1; transform:scale(1.35); }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <img src="data:image/svg+xml;base64,Cjxzdmcgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxjaXJjbGUgY3g9IjY0IiBjeT0iNjQiIHI9IjYwIiBmaWxsPSIjZmYwMDU1IiBvcGFjaXR5PSIwLjIiLz4KICA8Y2lyY2xlIGN4PSI2NCIgY3k9IjY0IiByPSI0NSIgZmlsbD0iI2ZmMDA1NSIgb3BhY2l0eT0iMC40Ii8+CiAgPHBhdGggZD0iTTY0IDIwIEw5MCA1MCBMNjQgODAgTDM4IDUwIFoiIGZpbGw9IiNmZjAwNTUiLz4KICA8Y2lyY2xlIGN4PSI2NCIgY3k9IjY0IiByPSIyMCIgZmlsbD0iIzBlMTExNyIvPgogIDxwYXRoIGQ9Ik01OCA1OCBMNzQgNjggTDU4IDc4IFoiIGZpbGw9IiNmZmYiLz4KPC9zdmc+Cg== " class="logo-big" alt="Logo">
+        <h1>Media Downloader</h1>
+        <div class="support">YouTube • TikTok • Facebook • Twitter • SoundCloud + more</div>
+    </div>
+    <input type="text" id="url" class="input-box" placeholder="Paste video URL here..." autofocus>
+    <div><button class="btn" onclick="process()">Analyze & Extract</button></div>
+
+    <div class="card" id="media-card">
+        <div class="info">
+            <img id="thumb" class="thumb" src="" alt="Thumbnail">
+            <div>
+                <h2 id="title">-</h2>
+                <p>Uploader: <span id="uploader">-</span></p>
+                <p>Duration: <span id="orig-duration">0:00</span></p>
+                <div class="total" id="total-duration">Total after loop: 0:00</div>
+                <label>Loop Count: <span id="loop-val">1</span>x</label>
+                <input type="range" min="1" max="100" value="1" class="slider" id="loop-slider" oninput="updateLoop()">
+
+                <div class="select-wrapper">
+                    <select id="output-type" onchange="toggleVideoQuality()">
+                        <option value="video">Video + Audio (MP4)</option>
+                        <option value="mp3">Audio Only - MP3 320kbps</option>
+                        <option value="wav">Audio Only - WAV Lossless</option>
+                    </select>
+                </div>
+
+                <div class="select-wrapper" id="video-quality-wrapper">
+                    <select id="video-quality"></select>
+                </div>
+
+                <button class="btn" onclick="download()" style="width:100%;padding:18px;margin-top:20px;font-size:1.3em;">
+                    Download x<span id="loop-display">1</span>
+                </button>
+
+                <div id="folder-controls" style="margin-top:15px; text-align:center; display:none;">
+                    <button class="btn btn-success" onclick="openFolder()">Open Download Folder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status" id="status">Ready</div>
+</div>
+
+<script>
+    let info = null, origSec = 0, lastFolder = null;
+
+    function formatTime(s) {
+        if (!s) return "0:00";
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = Math.floor(s % 60);
+        return (h > 0 ? h + ":" : "") + String(m).padStart(2, '0') + ":" + String(sec).padStart(2, '0');
+    }
+
+    function updateLoop() {
+        const v = document.getElementById('loop-slider').value;
+        document.getElementById('loop-val').innerText = v;
+        document.getElementById('loop-display').innerText = v;
+        document.getElementById('total-duration').innerText = "Total after loop: " + formatTime(origSec * v);
+    }
+
+    function toggleVideoQuality() {
+        document.getElementById('video-quality-wrapper').style.display =
+            document.getElementById('output-type').value === 'video' ? 'block' : 'none';
+    }
+
+    async function process() {
+        const url = document.getElementById('url').value.trim();
+        if (!url) return alert("Please paste a URL!");
+        document.getElementById('status').textContent = "Analyzing...";
+
+        try {
+            const data = await window.pywebview.api.analyze(url);
+            info = JSON.parse(data);
+            origSec = info.duration || 0;
+
+            document.getElementById('title').textContent = info.title || "Unknown";
+            document.getElementById('uploader').textContent = info.uploader || "-";
+            document.getElementById('orig-duration').textContent = formatTime(origSec);
+            document.getElementById('thumb').src = info.thumbnail || "";
+            document.getElementById('media-card').classList.add('show');
+
+            const sel = document.getElementById('video-quality');
+            sel.innerHTML = '<option value="best">Best Quality (incl. 4K/60fps)</option>';
+            const seen = new Set();
+            (info.formats || []).filter(f => f && f.vcodec !== 'none' && f.height).forEach(f => {
+                const key = f.height + "-" + (f.fps || 30);
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    const label = f.height + "p" + (f.fps > 50 ? " 60FPS" : "") + " " + (f.ext || "").toUpperCase();
+                    sel.add(new Option(label, f.format_id));
+                }
+            });
+
+            toggleVideoQuality();
+            updateLoop();
+            document.getElementById('status').textContent = "Ready to download!";
+        } catch (e) {
+            document.getElementById('status').textContent = "Error: " + e.message;
+        }
+    }
+
+    async function download() {
+        if (!info) return alert("Analyze first!");
+
+        const folder = await window.pywebview.api.choose_folder();
+        if (!folder) return document.getElementById('status').textContent = "Cancelled";
+
+        lastFolder = folder;
+        const loops = parseInt(document.getElementById('loop-slider').value);
+        const type = document.getElementById('output-type').value;
+        const fmt = type === 'video' ? (document.getElementById('video-quality').value || 'best') : null;
+
+        let title = (info.title || "video")
+            .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/#|❤️|♥|❤|♡/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        if (title.length > 100) title = title.substring(0, 97) + '...';
+        if (!title) title = 'Video';
+
+        const loopSuffix = loops > 1 ? '_x' + loops : '';
+        const ext = type === 'video' ? '.mp4' : (type === 'mp3' ? '.mp3' : '.wav');
+        let baseName = title + loopSuffix;
+        let filePath = folder.replace(/\\+/g, '/') + '/' + baseName + ext;
+
+        let counter = 1;
+        while (await window.pywebview.api.file_exists(filePath)) {
+            filePath = folder.replace(/\\+/g, '/') + '/' + baseName + ' (' + counter++ + ')' + ext;
+        }
+
+        const opts = {
+            format: type === 'video'
+                ? (fmt === 'best' ? 'bestvideo*+bestaudio/best' : fmt + '+bestaudio/best')
+                : 'bestaudio/best',
+            outtmpl: filePath,
+            restrictfilenames: true,
+            nooverwrites: false,
+        };
+
+        if (type !== 'video') {
+            opts.postprocessors = [{
+                key: 'FFmpegExtractAudio',
+                preferredcodec: type,
+                preferredquality: type === 'mp3' ? '320' : '0',
+            }];
+        } else {
+            opts.merge_output_format = 'mp4';
+        }
+
+        if (loops > 1) {
+            const n = loops - 1;
+            opts.postprocessors = opts.postprocessors || [];
+            opts.postprocessors.push({
+                key: 'FFmpegConcat',
+                only_video: false,
+                args: ['-filter_complex',
+                    `[0:v]loop=loop=${n}:size=clip:duration=clip[v];` +
+                    `[0:a]aloop=loop=${n}:size=clip:duration=clip[a];` +
+                    `[v][a]concat=n=2:v=1:a=1`
+                ]
+            });
+        }
+
+        document.getElementById('status').textContent = `Downloading x${loops}...`;
+        try {
+            await window.pywebview.api.download(info.webpage_url || document.getElementById('url').value, JSON.stringify(opts));
+            document.getElementById('status').textContent = `Completed x${loops}!`;
+            document.getElementById('folder-controls').style.display = 'block';
+        } catch (e) {
+            document.getElementById('status').textContent = "Failed: " + e.message;
+        }
+    }
+
+    function openFolder() {
+        if (lastFolder) window.pywebview.api.open_folder(lastFolder);
+    }
+</script>
+</body>
+</html>
