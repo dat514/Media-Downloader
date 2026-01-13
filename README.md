@@ -10,7 +10,7 @@
 **An all-in-one media powerhouse: Download, Convert, Edit, Resize, Crop & Create GIFs**  
 Beautiful Modern UI • Batch Processing • Visual Crop Editor • 60+ Format Support
 
----
+--- 
 
 ## ✨ Features
 
